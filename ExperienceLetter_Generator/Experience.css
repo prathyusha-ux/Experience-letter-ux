@@ -1,0 +1,455 @@
+*{ box-sizing: border-box; }
+
+/* Site-wide font stack: Calibri if installed (mainly Windows/Office), else
+   Carlito (loaded as a web font in index.html — metrically identical to
+   Calibri), else a generic system sans-serif as a last resort. */
+body {
+  background-color: #f5f5f5;
+  font-family: Calibri, Carlito, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  max-width: 1100px;
+  margin: 30px auto;
+  padding: 0 24px;
+  color: #111111;
+}
+
+h1 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111111;
+  margin-bottom: 30px;
+}
+
+p {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+.page-body{
+  text-align: justify;
+}
+
+.page .salary-table td,
+.page .salary-table th{
+  vertical-align: middle;
+}
+
+/* ---------- Grid layout (4 columns, matches reference) ---------- */
+
+.form-grid{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px 24px;
+  margin-bottom: 28px;
+}
+
+.field-group{
+  display: flex;
+  flex-direction: column;
+}
+
+.field-group.span-2{
+  grid-column: span 2;
+}
+
+label{
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+/* Small note shown under Date of Joining / Last Working Date after an
+   HRMS lookup — e.g. "Pulled from Offer Letter" or "Pulled from
+   Relieving Letter" — so it's clear the value was auto-filled rather
+   than typed in manually. */
+.field-hint{
+  font-size: 12px;
+  color: #0b63e5;
+  margin-top: 4px;
+  min-height: 14px;
+}
+.field-hint.missing{
+  color: #c62828;
+}
+
+input, select, textarea{
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 15px;
+  background-color: #ffffff;
+  color: #111111;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+input:focus, select:focus, textarea:focus{
+  outline: none;
+  border-color: #0b63e5;
+  box-shadow: 0 0 0 2px rgba(11,99,229,0.15);
+}
+
+textarea{
+  resize: vertical;
+  min-height: 42px;
+}
+
+input[readonly]{
+  background-color: #f0f0f0;
+  color: #666666;
+}
+
+/* ---------- Toggle rows (radio Yes/No, bond checkbox) ---------- */
+
+.radio-row{
+  display:flex;
+  gap:16px;
+  align-items:center;
+  height: 40px;
+}
+.radio-option{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-weight:500;
+  font-size:14px;
+  color:#111111;
+  margin:0;
+  cursor:pointer;
+}
+.radio-option input[type="radio"]{
+  width:auto;
+  margin:0;
+  cursor:pointer;
+}
+
+.toggle-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  height: 40px;
+}
+.toggle-row input{
+  width:auto;
+}
+.toggle-row label{
+  margin:0;
+}
+
+/* ---------- Conditionally hidden field groups ---------- */
+
+#customLocationField, #bondFields, #variablePayToggleFields, #pfFields, #tdsFields{
+  display:none;
+}
+#customLocationField.show, #bondFields.show, #variablePayToggleFields.show,
+#pfFields.show, #tdsFields.show{
+  display:flex;
+}
+
+/* ---------- Buttons ---------- */
+
+.button-row{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.secondary-buttons{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+button{
+  padding: 6px 10px;
+  background: #ffffff;
+  color: #111111;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+button:hover{
+  background: #f0f0f0;
+}
+
+.btn-primary{
+  background: #0b63e5;
+  color: #ffffff;
+  border: none;
+}
+.btn-primary:hover{
+  background: #094fbb;
+}
+.btn-wide{
+  width: 360px;
+  max-width: 100%;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+button:disabled{
+  background:#a9c3ea;
+  color:#ffffff;
+  cursor:not-allowed;
+  border:none;
+}
+button.icon-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+#editBtn{
+  background:#2e7d32;
+  color:#fff;
+  border:none;
+}
+#editBtn:hover{ background:#1b5e20; }
+#editBtn.active{ background:#c62828; }
+#editBtn.active:hover{ background:#a02020; }
+
+/* ---------- Status / hint text ---------- */
+
+#previewStatus{
+  font-size:13px;
+  font-weight:bold;
+}
+#editHint{
+  font-size:12px;
+  color:#0b63e5;
+  font-weight:600;
+  display:none;
+  margin-top:8px;
+}
+#editHint.show{ display:block; }
+#letterEmpty{
+  color:#555;
+  font-style:italic;
+}
+
+/* ---------- Letter output / pages ---------- */
+
+#letterOutput{
+  display:none;
+  max-width: none;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+#letterOutput.show{
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  margin-top: 20px;
+}
+.page{
+  width: 210mm;
+  min-height: 297mm;
+  background: #fff;
+  color: #000;
+  padding: 18mm 16mm 14mm;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  page-break-after: always;
+  break-after: page;
+  font-family: Calibri, Carlito, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.page:last-child{
+  page-break-after: auto;
+  break-after: auto;
+}
+
+.page p{
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: none;
+  orphans: 3;
+  widows: 3;
+  line-height: 1.45;
+  margin: 0 0 12px;
+}
+
+/* Tighter spacing between paragraphs that are sub-points of the same
+   clause (e.g. Job Title, Hours and Place of Work) — normal 12px spacing
+   still applies before/after headings and between unrelated paragraphs. */
+.page .tight-group p{
+  margin: 0 0 4px;
+}
+.page .tight-group p:last-child{
+  margin-bottom: 12px;
+}
+.page h3{
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 20px 0 10px;
+  letter-spacing: 0.3px;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.page h3:first-child{
+  margin-top: 0;
+}
+
+.page ul{
+  text-align: left;
+  margin: 0 0 12px 22px;
+}
+
+.page ul li{
+  margin-bottom: 5px;
+}
+
+.page .letter-title{
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  color: #1155cc;
+  letter-spacing: 0.4px;
+  margin: 0 0 24px;
+}
+
+.page .company-name{ font-weight: 700; font-size: 13px; color: #111; }
+.page .company-tagline{ font-size: 10px; color: #555; }
+
+/* Salary table */
+.page .salary-table{
+  font-size: 14px;
+  width:100%;
+  border-collapse:collapse;
+  margin:16px 0;
+  border: 1px solid #000;
+}
+.page .salary-table th{
+  background:#e6e6e6;
+  color:#000;
+  text-align:left;
+  padding:10px 14px;
+  font-weight:700;
+  border: 1px solid #000;
+}
+.page .salary-table th.num, .page .salary-table td.num{ text-align:right; }
+.page .salary-table td{ padding:9px 14px; border: 1px solid #000; }
+.page .salary-table tr.subhead td{
+  font-weight:bold;
+  background:#fff;
+  border: 1px solid #000;
+}
+.page .salary-table tr.total td{
+  font-weight:bold;
+  background:#fff;
+  border: 1px solid #000;
+}
+
+.page .letter-foot-note{
+  font-size: 11px;
+  color:#111;
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+/* Sign block */
+.page .sign-block{ margin-top: 16px; }
+.page .sign-line{
+  display:flex;
+  gap:10px;
+  margin-bottom:14px;
+  align-items: baseline;
+}
+.page .sign-line .lbl{
+  width:90px;
+  font-size:14px;
+  color:#111;
+  font-weight:bold;
+}
+.page .sign-line .fill{
+  flex: 0 0 200px;
+  border-bottom:1px solid #111;
+  min-height:20px;
+  align-self: flex-end;
+}
+.page .sign-block,
+.page .sign-line,
+.page .sign-caption{
+  text-align: left;
+}
+.page .sign-caption{
+  margin-bottom: 14px;
+}
+
+/* Regards line (Page 4) */
+.page .regards-line{ margin-top: 20px; margin-bottom: 8px; }
+.page .regards-label{ color:#111; font-size:15px; font-weight:bold; }
+
+.page .stamp-img{ width: 140px; height: auto; margin-top: 6px; display: block; }
+
+.page-body{ flex: 1 0 auto; }
+
+.letterhead{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+}
+.logo-img{ width: 150px; height: 150px; object-fit: contain; flex-shrink: 0; }
+
+#letterOutput.editing .page{
+  outline:2px dashed #0b63e5;
+  outline-offset:6px;
+}
+#letterOutput.editing .page-body[contenteditable="true"]:focus{
+  outline:2px solid #0b63e5;
+}
+
+.salary-table tr, .letter-sheet h3, .sign-block, .sign-line{
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.letter-footer{
+  padding-top: 10px;
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+}
+.page-number{
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 0.5px;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px){
+  .form-grid{ grid-template-columns: repeat(2, 1fr); }
+  .field-group.span-2{ grid-column: span 2; }
+}
+@media (max-width: 560px){
+  .form-grid{ grid-template-columns: 1fr; }
+  .field-group.span-2{ grid-column: span 1; }
+}
+
+@media print{
+  form, h1{ display:none !important; }
+  #letterOutput{ border:none; padding:0; }
+  .page{ border: none; margin: 0; box-shadow: none; }
+  #letterOutput.show{ gap: 0; }
+}

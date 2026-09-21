@@ -66,7 +66,19 @@
   const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
   const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // Isolated so that a missing/blocked CDN script or a bad URL can't throw
+  // an uncaught error here and take down the rest of the page's buttons
+  // (Generate/PDF/Save/Edit don't depend on Supabase at all).
+  let supabase = null;
+  try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else {
+      console.warn('Supabase client library not found on window — check that the CDN <script> tag is included in index.html before script.js. HRMS lookup will be unavailable, but the rest of the tool still works.');
+    }
+  } catch (err) {
+    console.error('Failed to initialize Supabase client:', err);
+  }
 
   // Adjust these three names if your table/columns are called something else.
   const EMPLOYEES_TABLE = 'employees';
@@ -93,6 +105,12 @@
       setHint(dojHint, 'Employee ID required for HRMS lookup', true);
       setHint(lwdHint, 'Employee ID required for HRMS lookup', true);
       employeeId.focus();
+      return;
+    }
+
+    if (!supabase) {
+      setHint(dojHint, 'Database not connected — enter dates manually', true);
+      setHint(lwdHint, 'Database not connected — enter dates manually', true);
       return;
     }
 

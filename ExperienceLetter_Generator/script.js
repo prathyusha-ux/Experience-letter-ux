@@ -175,8 +175,8 @@
           and growth in their future career.</p>
 
           <div class="sign-block">
-            <p style="margin:0 0 2px;">Yours faithfully,</p>
-            <p style="margin:0 0 8px;">For ${COMPANY_NAME}</p>
+            <p style="margin:0 0 2px;"><strong>Yours faithfully,</strong></p>
+            <p style="margin:0 0 8px;"><strong>For ${COMPANY_NAME}</strong></p>
             <img src="signature.png" alt="Authorized signature and company stamp" class="stamp-img">
           </div>
         </div>

@@ -35,10 +35,10 @@ const COL_RELIEVING_LWD = 'last_working_date';
 // Offer letter table — proposed designation/DOJ/recipient email were
 // recorded here at offer stage, keyed by candidate name (not employee_id,
 // since that doesn't exist yet at offer stage).
-const OFFER_LETTERS_TABLE = 'offer_letters';
+const OFFER_LETTERS_TABLE = 'offer_sends';
 const COL_CANDIDATE_NAME = 'candidate_name';
 const COL_JOB_TITLE = 'job_title';
-const COL_OFFER_DOJ = 'doj';
+const COL_OFFER_DOJ = 'date_of_joining';
 const COL_RECIPIENT_EMAIL = 'recipient_email';
 
 /* ----------------------------------------------------------------------- *

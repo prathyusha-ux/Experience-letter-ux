@@ -25,10 +25,21 @@ const RENDER_API_KEY = 'uxinterfacely experienceletter 01';
 const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
 const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
 
-const EMPLOYEES_TABLE = 'employees';
-const COL_EMPLOYEE_ID = 'employee_id';
-const COL_DOJ = 'doj';
-const COL_LWD = 'last_working_date';
+// Relieving letter table — employee_id and confirmed last working date
+// are recorded here at exit stage, keyed by employee name.
+const RELIEVING_LETTERS_TABLE = 'relieving_letters';
+const COL_RELIEVING_NAME = 'employee_name';
+const COL_RELIEVING_EMPLOYEE_ID = 'employee_id';
+const COL_RELIEVING_LWD = 'last_working_date';
+
+// Offer letter table — proposed designation/DOJ/recipient email were
+// recorded here at offer stage, keyed by candidate name (not employee_id,
+// since that doesn't exist yet at offer stage).
+const OFFER_LETTERS_TABLE = 'offer_letters';
+const COL_CANDIDATE_NAME = 'candidate_name';
+const COL_JOB_TITLE = 'job_title';
+const COL_OFFER_DOJ = 'doj';
+const COL_RECIPIENT_EMAIL = 'recipient_email';
 
 /* ----------------------------------------------------------------------- *
  * FORMATTING HELPERS
@@ -87,37 +98,51 @@ safeSetup('Supabase client init', () => {
 });
 
 function setHint(el, text, isMissing, color) {
+  if (!el) return;
   el.textContent = text;
   el.classList.toggle('missing', !!isMissing);
   el.style.color = color || '';
 }
 
-async function fetchEmployeeRecord(id) {
-  const { data, error } = await supabase
-    .from(EMPLOYEES_TABLE)
-    .select(`${COL_DOJ}, ${COL_LWD}`)
-    .eq(COL_EMPLOYEE_ID, id)
-    .maybeSingle();
+/**
+ * Looks up two separate tables by the employee's full name:
+ *  - offer_letters: designation, proposed DOJ, recipient email (recorded at offer stage)
+ *  - employees: employee_id, confirmed last working date (recorded once actually joined)
+ * Either lookup succeeding independently still fills in what it found.
+ */
+async function fetchHrmsRecordsByName(name) {
+  const [offerResult, relievingResult] = await Promise.all([
+    supabase
+      .from(OFFER_LETTERS_TABLE)
+      .select(`${COL_JOB_TITLE}, ${COL_OFFER_DOJ}, ${COL_RECIPIENT_EMAIL}`)
+      .ilike(COL_CANDIDATE_NAME, name)
+      .maybeSingle(),
+    supabase
+      .from(RELIEVING_LETTERS_TABLE)
+      .select(`${COL_RELIEVING_EMPLOYEE_ID}, ${COL_RELIEVING_LWD}`)
+      .ilike(COL_RELIEVING_NAME, name)
+      .maybeSingle(),
+  ]);
 
-  if (error) throw error;
-  if (!data) return null;
-  return { doj: data[COL_DOJ], lastWorkingDate: data[COL_LWD] };
+  if (offerResult.error) console.error('offer_letters lookup failed:', offerResult.error);
+  if (relievingResult.error) console.error('relieving_letters lookup failed:', relievingResult.error);
+
+  return { offer: offerResult.data || null, relieving: relievingResult.data || null };
 }
 
 async function handleLookupClick() {
   const dojHint = getElement('dojHint');
   const lwdHint = getElement('lwdHint');
-  const id = getElement('employeeId').value.trim();
+  const name = getElement('empName').value.trim();
 
-  if (!id) {
-    setHint(dojHint, 'Employee ID required for HRMS lookup', true);
-    setHint(lwdHint, 'Employee ID required for HRMS lookup', true);
-    getElement('employeeId').focus();
+  if (!name) {
+    alert('Enter the employee\'s Full Name first, then click "Fetch Dates from HRMS".');
+    getElement('empName').focus();
     return;
   }
   if (!supabase) {
-    setHint(dojHint, 'Database not connected — enter dates manually', true);
-    setHint(lwdHint, 'Database not connected — enter dates manually', true);
+    setHint(dojHint, 'Database not connected — enter details manually', true);
+    setHint(lwdHint, 'Database not connected — enter details manually', true);
     return;
   }
 
@@ -126,18 +151,32 @@ async function handleLookupClick() {
   lookupBtn.textContent = 'Looking up…';
 
   try {
-    const record = await fetchEmployeeRecord(id);
-    if (!record) {
-      setHint(dojHint, 'No record found for this Employee ID', true);
-      setHint(lwdHint, 'No record found for this Employee ID', true);
+    const { offer, relieving } = await fetchHrmsRecordsByName(name);
+
+    if (!offer && !relieving) {
+      setHint(dojHint, 'No matching records found for this name', true);
+      setHint(lwdHint, 'No matching records found for this name', true);
       return;
     }
-    getElement('doj').value = record.doj;
-    getElement('lastWorkingDate').value = record.lastWorkingDate;
-    setHint(dojHint, 'Pulled from employee database', false);
-    setHint(lwdHint, 'Pulled from employee database', false);
+
+    if (offer) {
+      getElement('designation').value = offer[COL_JOB_TITLE] || '';
+      getElement('doj').value = offer[COL_OFFER_DOJ] || '';
+      getElement('emailInput').value = offer[COL_RECIPIENT_EMAIL] || '';
+      setHint(dojHint, 'Pulled from offer letter records', false);
+    } else {
+      setHint(dojHint, 'No offer letter record found for this name', true);
+    }
+
+    if (relieving) {
+      getElement('employeeId').value = relieving[COL_RELIEVING_EMPLOYEE_ID] || '';
+      getElement('lastWorkingDate').value = relieving[COL_RELIEVING_LWD] || '';
+      setHint(lwdHint, 'Pulled from relieving letter records', false);
+    } else {
+      setHint(lwdHint, 'No relieving letter record found for this name', true);
+    }
   } catch (err) {
-    console.error('Supabase lookup failed:', err);
+    console.error('HRMS lookup failed:', err);
     setHint(dojHint, 'Lookup failed — check console for details', true);
     setHint(lwdHint, 'Lookup failed — check console for details', true);
   } finally {
@@ -281,13 +320,13 @@ function buildLetterHtml(values) {
         Throughout their employment, the employee demonstrated professionalism and fulfilled their
         assigned responsibilities as required by the organization.</p>
 
-        <p>We sincerely appreciate the services and contributions of <strong>Mr./Ms.${escapeHTML(values.name)}</strong>
+        <p>We sincerely appreciate the services and contributions of <strong>Mr./Ms. ${escapeHTML(values.name)}</strong>
         during their association with <strong>${COMPANY.name}</strong> and wish them continued success
         and growth in their future career.</p>
 
         <div class="sign-block">
-          <strong><p style="margin:0 0 2px;">Yours faithfully,</p></strong>
-          <strong><p style="margin:0 0 8px;">For ${COMPANY.name}</p></strong>
+          <p style="margin:0 0 2px;"><strong>Yours faithfully,</strong></p>
+          <p style="margin:0 0 8px;"><strong>For ${COMPANY.name}</strong></p>
           <img src="${COMPANY.stampImage}" alt="Authorized signature and company stamp" class="stamp-img">
         </div>
       </div>

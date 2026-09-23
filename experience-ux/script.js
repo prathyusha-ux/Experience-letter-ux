@@ -88,10 +88,10 @@ safeSetup('default letterDate', () => {
 /* ----------------------------------------------------------------------- *
  * SUPABASE — HRMS lookup (shared employees database)
  * ----------------------------------------------------------------------- */
-let supabase = null;
+let supabaseClient = null;
 safeSetup('Supabase client init', () => {
   if (window.supabase && typeof window.supabase.createClient === 'function') {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } else {
     console.warn('Supabase client library not found — check the CDN <script> tag is included before script.js. HRMS lookup will be unavailable, but the rest of the tool still works.');
   }
@@ -112,12 +112,12 @@ function setHint(el, text, isMissing, color) {
  */
 async function fetchHrmsRecordsByName(name) {
   const [offerResult, relievingResult] = await Promise.all([
-    supabase
+    supabaseClient
       .from(OFFER_LETTERS_TABLE)
       .select(`${COL_JOB_TITLE}, ${COL_OFFER_DOJ}, ${COL_RECIPIENT_EMAIL}`)
       .ilike(COL_CANDIDATE_NAME, name)
       .maybeSingle(),
-    supabase
+    supabaseClient
       .from(RELIEVING_LETTERS_TABLE)
       .select(`${COL_RELIEVING_EMPLOYEE_ID}, ${COL_RELIEVING_LWD}`)
       .ilike(COL_RELIEVING_NAME, name)
@@ -140,7 +140,7 @@ async function handleLookupClick() {
     getElement('empName').focus();
     return;
   }
-  if (!supabase) {
+  if (!supabaseClient) {
     setHint(dojHint, 'Database not connected — enter details manually', true);
     setHint(lwdHint, 'Database not connected — enter details manually', true);
     return;

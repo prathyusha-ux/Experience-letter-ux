@@ -281,13 +281,13 @@ function buildLetterHtml(values) {
         Throughout their employment, the employee demonstrated professionalism and fulfilled their
         assigned responsibilities as required by the organization.</p>
 
-        <p>We sincerely appreciate the services and contributions of Mr./Ms. <strong>${escapeHTML(values.name)}</strong>
+        <p>We sincerely appreciate the services and contributions of <strong>Mr./Ms.${escapeHTML(values.name)}</strong>
         during their association with <strong>${COMPANY.name}</strong> and wish them continued success
         and growth in their future career.</p>
 
         <div class="sign-block">
-          <p style="margin:0 0 2px;">Yours faithfully,</p>
-          <p style="margin:0 0 8px;">For ${COMPANY.name}</p>
+          <strong><p style="margin:0 0 2px;">Yours faithfully,</p></strong>
+          <strong><p style="margin:0 0 8px;">For ${COMPANY.name}</p></strong>
           <img src="${COMPANY.stampImage}" alt="Authorized signature and company stamp" class="stamp-img">
         </div>
       </div>

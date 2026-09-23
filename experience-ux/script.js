@@ -22,8 +22,8 @@ const RENDER_API_KEY = 'uxinterfacely experienceletter 01';
 // TODO: fill in your Supabase project's URL and public anon key
 // (Project Settings -> API). Safe to expose client-side as long as RLS
 // is enabled with a SELECT policy for the anon role on the employees table.
-const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
+const SUPABASE_URL = 'https://gmsmuymadicqrncropih.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_D6k8uJiLHAVaACraUMI6xw_93XiEfpS';
 
 // Relieving letter table — employee_id and confirmed last working date
 // are recorded here at exit stage, keyed by employee name.

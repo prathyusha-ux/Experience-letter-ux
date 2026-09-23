@@ -63,7 +63,7 @@ function requireApiKey(req, res, next) {
 // <img src="">. Swap the logo any time by updating LOGO_URL in Render,
 // with no code change or redeploy required.
 const LOGO_URL = process.env.LOGO_URL
-  || 'https://raw.githubusercontent.com/your-username/your-repo/main/logo.png';
+  || 'https://github.com/prathyusha-ux/Experience-letter-ux/blob/main/experience-ux/logo.png?raw=true';
 
 app.get('/', (req, res) => {
   res.send('Experience letter backend is running.');
@@ -116,7 +116,7 @@ app.post('/api/send-experience', requireApiKey, upload.single('pdf'), async (req
     <div style="${TEXT_STYLE}width:100%;word-wrap:break-word;">
       <p style="${P_STYLE}">Hi ${name},</p>
       <p style="${P_STYLE}">Please find attached your <strong>experience letter</strong> confirming your employment with
-      ${COMPANY_NAME} as ${role}, from ${joiningDateText} to ${lastWorkingDateText}.</p>
+      <strong>${COMPANY_NAME}</strong> as <strong>${role}</strong>, from <strong>${joiningDateText}</strong> to <strong>${lastWorkingDateText}</strong>.</p>
       <p style="${P_STYLE}">We sincerely appreciate your contributions during your time with us and wish you
       continued success and growth in your future career.</p>
       <p style="${P_STYLE}">Best Regards,</p>

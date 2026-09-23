@@ -24,7 +24,6 @@ const RENDER_API_KEY = 'uxinterfacely experienceletter 01';
 // is enabled with a SELECT policy for the anon role on the employees table.
 const SUPABASE_URL = 'https://gmsmuymadicqrncropih.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_D6k8uJiLHAVaACraUMI6xw_93XiEfpS';
-
 // Offer letter table — designation, DOJ, and recipient email were
 // recorded here at offer stage, keyed by candidate name.
 const OFFER_LETTERS_TABLE = 'offer_sends';
@@ -104,12 +103,17 @@ function setHint(el, text, isMissing, color) {
 async function fetchHrmsRecordByName(name) {
   const { data, error } = await supabaseClient
     .from(OFFER_LETTERS_TABLE)
-    .select(`${COL_JOB_TITLE}, ${COL_OFFER_DOJ}, ${COL_RECIPIENT_EMAIL}`)
-    .ilike(COL_CANDIDATE_NAME, name)
-    .maybeSingle();
+    .select(`${COL_JOB_TITLE}, ${COL_OFFER_DOJ}, ${COL_RECIPIENT_EMAIL}, status`)
+    .ilike(COL_CANDIDATE_NAME, name);
 
   if (error) throw error;
-  return data || null;
+  if (!data || data.length === 0) return null;
+
+  // Multiple rows can exist for the same name (one per save/send action).
+  // Prefer the one that was actually sent to the candidate over a draft
+  // that was only ever saved.
+  const sentRow = data.find((row) => row.status === 'sent');
+  return sentRow || data[0];
 }
 
 async function handleLookupClick() {

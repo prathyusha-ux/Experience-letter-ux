@@ -270,7 +270,7 @@ function buildLetterHtml(values) {
         <p style="margin:0 0 2px;"><strong>Date:</strong> ${formatDateDMY(values.letterDate)}</p>
         <p style="margin:0 0 14px;"><strong>Employee ID.:</strong> ${escapeHTML(values.employeeId)}</p>
 
-        <p>This is to certify that Mr./Ms. <strong>${escapeHTML(values.name)}</strong> was employed
+        <p>This is to certify that <strong>Mr./Ms. ${escapeHTML(values.name)}</strong> was employed
         with <strong>${COMPANY.name}</strong> as <strong>${escapeHTML(values.designation)}</strong>
         from <strong>${formatDateDMY(values.doj)}</strong> to <strong>${formatDateDMY(values.lastWorkingDate)}</strong>.</p>
 

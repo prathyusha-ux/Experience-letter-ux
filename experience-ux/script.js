@@ -24,13 +24,18 @@ const RENDER_API_KEY = 'uxinterfacely experienceletter 01';
 // is enabled with a SELECT policy for the anon role on the employees table.
 const SUPABASE_URL = 'https://gmsmuymadicqrncropih.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_D6k8uJiLHAVaACraUMI6xw_93XiEfpS';
-// Offer letter table — designation, DOJ, and recipient email were
-// recorded here at offer stage, keyed by candidate name.
-const OFFER_LETTERS_TABLE = 'offer_sends';
-const COL_CANDIDATE_NAME = 'candidate_name';
-const COL_JOB_TITLE = 'job_title';
-const COL_OFFER_DOJ = 'date_of_joining';
-const COL_RECIPIENT_EMAIL = 'recipient_email';
+// employees table — the single source of truth for HRMS lookups,
+// keyed by the exact, unique employee_id (no name-matching fragility).
+// relieving_letters — real, already-populated data from your separate
+// relieving-letter tool. Keyed by associate_id (their employee ID).
+const RELIEVING_LETTERS_TABLE = 'relieving_letters';
+const COL_ASSOCIATE_ID = 'associate_id';
+const COL_FULL_NAME = 'full_name';
+const COL_DESIGNATION = 'designation';
+const COL_JOINING_DATE = 'joining_date';
+const COL_LWD = 'last_working_date';
+const COL_EMAIL = 'email';
+const COL_STATUS = 'status';
 
 /* ----------------------------------------------------------------------- *
  * FORMATTING HELPERS
@@ -96,33 +101,36 @@ function setHint(el, text, isMissing, color) {
 }
 
 /**
- * Looks up offer_sends by the employee's full name to prefill
- * Designation, Date of Joining, and Recipient Email. Employee ID and
- * Last Working Date are entered manually — no automatic source for those.
+ * Looks up employees by employee_id to prefill Full Name, Designation,
+ * Date of Joining, Last Working Date, and Email — one exact-match query,
+ * no name-matching required since employee_id is unique.
  */
-async function fetchHrmsRecordByName(name) {
+/**
+ * Looks up relieving_letters by associate_id to prefill Full Name,
+ * Designation, Date of Joining, Last Working Date, and Email — one
+ * exact-match query. Multiple rows can exist per associate_id (one per
+ * save/send action), so prefer the one that was actually sent.
+ */
+async function fetchEmployeeByEmployeeId(employeeId) {
   const { data, error } = await supabaseClient
-    .from(OFFER_LETTERS_TABLE)
-    .select(`${COL_JOB_TITLE}, ${COL_OFFER_DOJ}, ${COL_RECIPIENT_EMAIL}, status`)
-    .ilike(COL_CANDIDATE_NAME, name);
+    .from(RELIEVING_LETTERS_TABLE)
+    .select(`${COL_FULL_NAME}, ${COL_DESIGNATION}, ${COL_JOINING_DATE}, ${COL_LWD}, ${COL_EMAIL}, ${COL_STATUS}`)
+    .eq(COL_ASSOCIATE_ID, employeeId);
 
   if (error) throw error;
   if (!data || data.length === 0) return null;
 
-  // Multiple rows can exist for the same name (one per save/send action).
-  // Prefer the one that was actually sent to the candidate over a draft
-  // that was only ever saved.
-  const sentRow = data.find((row) => row.status === 'sent');
+  const sentRow = data.find((row) => row[COL_STATUS] === 'sent');
   return sentRow || data[0];
 }
 
 async function handleLookupClick() {
   const dojHint = getElement('dojHint');
-  const name = getElement('empName').value.trim();
+  const employeeId = getElement('employeeId').value.trim();
 
-  if (!name) {
-    alert('Enter the employee\'s Full Name first, then click "Fetch Dates from HRMS".');
-    getElement('empName').focus();
+  if (!employeeId) {
+    alert('Enter the Employee ID first, then click "Fetch Dates from HRMS".');
+    getElement('employeeId').focus();
     return;
   }
   if (!supabaseClient) {
@@ -135,17 +143,19 @@ async function handleLookupClick() {
   lookupBtn.textContent = 'Looking up…';
 
   try {
-    const offer = await fetchHrmsRecordByName(name);
+    const record = await fetchEmployeeByEmployeeId(employeeId);
 
-    if (!offer) {
-      setHint(dojHint, 'No matching record found for this name', true);
+    if (!record) {
+      setHint(dojHint, 'No matching record found for this Employee ID', true);
       return;
     }
 
-    getElement('designation').value = offer[COL_JOB_TITLE] || '';
-    getElement('doj').value = offer[COL_OFFER_DOJ] || '';
-    getElement('emailInput').value = offer[COL_RECIPIENT_EMAIL] || '';
-    setHint(dojHint, 'Pulled from offer letter records', false);
+    getElement('empName').value = record[COL_FULL_NAME] || '';
+    getElement('designation').value = record[COL_DESIGNATION] || '';
+    getElement('doj').value = record[COL_JOINING_DATE] || '';
+    getElement('lastWorkingDate').value = record[COL_LWD] || '';
+    getElement('emailInput').value = record[COL_EMAIL] || '';
+    setHint(dojHint, 'Pulled from relieving letter records', false);
   } catch (err) {
     console.error('HRMS lookup failed:', err);
     setHint(dojHint, 'Lookup failed — check console for details', true);

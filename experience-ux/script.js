@@ -24,6 +24,7 @@ const RENDER_API_KEY = 'uxinterfacely experienceletter 01';
 // is enabled with a SELECT policy for the anon role on the employees table.
 const SUPABASE_URL = 'https://gmsmuymadicqrncropih.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_D6k8uJiLHAVaACraUMI6xw_93XiEfpS';
+
 // employees table — the single source of truth for HRMS lookups,
 // keyed by the exact, unique employee_id (no name-matching fragility).
 // relieving_letters — real, already-populated data from your separate
@@ -106,11 +107,16 @@ function setHint(el, text, isMissing, color) {
  * no name-matching required since employee_id is unique.
  */
 /**
- * Looks up relieving_letters by associate_id to prefill Full Name,
- * Designation, Date of Joining, Last Working Date, and Email — one
- * exact-match query. Multiple rows can exist per associate_id (one per
+ * Looks up relieving_letters by associate_id OR full_name — whichever
+ * the user filled in. Multiple rows can exist per person (one per
  * save/send action), so prefer the one that was actually sent.
  */
+function pickPreferredRow(data) {
+  if (!data || data.length === 0) return null;
+  const sentRow = data.find((row) => row[COL_STATUS] === 'sent');
+  return sentRow || data[0];
+}
+
 async function fetchEmployeeByEmployeeId(employeeId) {
   const { data, error } = await supabaseClient
     .from(RELIEVING_LETTERS_TABLE)
@@ -118,18 +124,26 @@ async function fetchEmployeeByEmployeeId(employeeId) {
     .eq(COL_ASSOCIATE_ID, employeeId);
 
   if (error) throw error;
-  if (!data || data.length === 0) return null;
+  return pickPreferredRow(data);
+}
 
-  const sentRow = data.find((row) => row[COL_STATUS] === 'sent');
-  return sentRow || data[0];
+async function fetchEmployeeByFullName(name) {
+  const { data, error } = await supabaseClient
+    .from(RELIEVING_LETTERS_TABLE)
+    .select(`${COL_FULL_NAME}, ${COL_DESIGNATION}, ${COL_JOINING_DATE}, ${COL_LWD}, ${COL_EMAIL}, ${COL_STATUS}`)
+    .ilike(COL_FULL_NAME, name);
+
+  if (error) throw error;
+  return pickPreferredRow(data);
 }
 
 async function handleLookupClick() {
   const dojHint = getElement('dojHint');
   const employeeId = getElement('employeeId').value.trim();
+  const name = getElement('empName').value.trim();
 
-  if (!employeeId) {
-    alert('Enter the Employee ID first, then click "Fetch Dates from HRMS".');
+  if (!employeeId && !name) {
+    alert('Enter either the Employee ID or Full Name first, then click "Fetch Dates from HRMS".');
     getElement('employeeId').focus();
     return;
   }
@@ -143,10 +157,18 @@ async function handleLookupClick() {
   lookupBtn.textContent = 'Looking up…';
 
   try {
-    const record = await fetchEmployeeByEmployeeId(employeeId);
+    // Try Employee ID first (exact, unambiguous); fall back to name if
+    // no ID was given, or the ID didn't match anything.
+    let record = null;
+    if (employeeId) {
+      record = await fetchEmployeeByEmployeeId(employeeId);
+    }
+    if (!record && name) {
+      record = await fetchEmployeeByFullName(name);
+    }
 
     if (!record) {
-      setHint(dojHint, 'No matching record found for this Employee ID', true);
+      setHint(dojHint, 'No matching record found', true);
       return;
     }
 

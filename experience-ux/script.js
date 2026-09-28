@@ -25,15 +25,17 @@ const RENDER_API_KEY = 'uxinterfacely experienceletter 01';
 const SUPABASE_URL = 'https://gmsmuymadicqrncropih.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_D6k8uJiLHAVaACraUMI6xw_93XiEfpS';
 
-// relieving_letters — keyed by employee_id, matching the form field name.
-// (No status column on this table, unlike offer_sends.)
+// relieving_letters — keyed by associate_id, with a real status column
+// ('saved' / 'sent' / null) to prefer the finalized row when duplicates
+// exist for the same person.
 const RELIEVING_LETTERS_TABLE = 'relieving_letters';
-const COL_EMPLOYEE_ID = 'employee_id';
-const COL_NAME = 'name';
+const COL_ASSOCIATE_ID = 'associate_id';
+const COL_FULL_NAME = 'full_name';
 const COL_DESIGNATION = 'designation';
-const COL_JOIN_DATE = 'join_date';
+const COL_JOINING_DATE = 'joining_date';
 const COL_LWD = 'last_working_date';
 const COL_EMAIL = 'email';
+const COL_STATUS = 'status';
 
 /* ----------------------------------------------------------------------- *
  * FORMATTING HELPERS
@@ -99,30 +101,34 @@ function setHint(el, text, isMissing, color) {
 }
 
 /**
- * Looks up relieving_letters by employee_id OR name — whichever the
- * user filled in. Just takes the first match if more than one exists
- * (this table has no status field to distinguish drafts from finals).
+ * Looks up relieving_letters by associate_id OR full_name — whichever
+ * the user filled in. Multiple rows can exist per person (one per
+ * save/send action), so prefer the one that was actually sent.
  */
+function pickPreferredRow(data) {
+  if (!data || data.length === 0) return null;
+  const sentRow = data.find((row) => row[COL_STATUS] === 'sent');
+  return sentRow || data[0];
+}
+
 async function fetchEmployeeByEmployeeId(employeeId) {
   const { data, error } = await supabaseClient
     .from(RELIEVING_LETTERS_TABLE)
-    .select(`${COL_NAME}, ${COL_DESIGNATION}, ${COL_JOIN_DATE}, ${COL_LWD}, ${COL_EMAIL}`)
-    .eq(COL_EMPLOYEE_ID, employeeId)
-    .limit(1);
+    .select(`${COL_FULL_NAME}, ${COL_DESIGNATION}, ${COL_JOINING_DATE}, ${COL_LWD}, ${COL_EMAIL}, ${COL_STATUS}`)
+    .eq(COL_ASSOCIATE_ID, employeeId);
 
   if (error) throw error;
-  return (data && data[0]) || null;
+  return pickPreferredRow(data);
 }
 
 async function fetchEmployeeByName(name) {
   const { data, error } = await supabaseClient
     .from(RELIEVING_LETTERS_TABLE)
-    .select(`${COL_NAME}, ${COL_DESIGNATION}, ${COL_JOIN_DATE}, ${COL_LWD}, ${COL_EMAIL}`)
-    .ilike(COL_NAME, name)
-    .limit(1);
+    .select(`${COL_FULL_NAME}, ${COL_DESIGNATION}, ${COL_JOINING_DATE}, ${COL_LWD}, ${COL_EMAIL}, ${COL_STATUS}`)
+    .ilike(COL_FULL_NAME, name);
 
   if (error) throw error;
-  return (data && data[0]) || null;
+  return pickPreferredRow(data);
 }
 
 async function handleLookupClick() {
@@ -160,9 +166,9 @@ async function handleLookupClick() {
       return;
     }
 
-    getElement('empName').value = record[COL_NAME] || '';
+    getElement('empName').value = record[COL_FULL_NAME] || '';
     getElement('designation').value = record[COL_DESIGNATION] || '';
-    getElement('doj').value = record[COL_JOIN_DATE] || '';
+    getElement('doj').value = record[COL_JOINING_DATE] || '';
     getElement('lastWorkingDate').value = record[COL_LWD] || '';
     getElement('emailInput').value = record[COL_EMAIL] || '';
     setHint(dojHint, 'Pulled from relieving letter records', false);
